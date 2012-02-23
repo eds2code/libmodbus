@@ -37,9 +37,10 @@
 
 #define _MODBUS_RTU_CHECKSUM_LENGTH    2
 
-/* Time waited beetween the RTS switch before transmit data or after transmit
+/* Default time waited beetween the RTS switch before transmit data or after transmit
    data before to read */
-#define _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH 10000
+#define _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH_DEFAULT 10000
+int modbus_rts_time_rts_switch = _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH_DEFAULT;
 
 #if defined(_WIN32)
 #define ENOTSUP WSAEOPNOTSUPP

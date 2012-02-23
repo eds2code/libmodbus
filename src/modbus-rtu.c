@@ -284,7 +284,7 @@ ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
 #else
 #if HAVE_DECL_TIOCM_RTS
     modbus_rtu_t *ctx_rtu = ctx->backend_data;
-    if (ctx_rtu->rts != MODBUS_RTU_RTS_NONE) {
+    if (ctx_rtu->rts != MODBUS_RTU_RTS_NONE && ctx_rtu->rts != MODBUS_RTU_RTS_HW ) {
         ssize_t size;
 
         if (ctx->debug) {
@@ -292,11 +292,11 @@ ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
         }
 
         _modbus_rtu_ioctl_rts(ctx->s, ctx_rtu->rts == MODBUS_RTU_RTS_UP);
-        usleep(_MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH);
+        usleep(modbus_rts_time_rts_switch);
 
         size = write(ctx->s, req, req_length);
 
-        usleep(_MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH);
+        usleep(modbus_rts_time_rts_switch);
         _modbus_rtu_ioctl_rts(ctx->s, ctx_rtu->rts != MODBUS_RTU_RTS_UP);
 
         return size;
@@ -660,6 +660,11 @@ static int _modbus_rtu_connect(modbus_t *ctx)
         tios.c_cflag |= CS8;
         break;
     }
+    
+    /* Check for RTS hardware handling */
+    if (modbus_rtu_get_rts (ctx) == MODBUS_RTU_RTS_HW) {
+		tios.c_cflag |= CRTSCTS;
+	}
 
     /* Stop bit (1 or 2) */
     if (ctx_rtu->stop_bit == 1)
@@ -875,11 +880,13 @@ int modbus_rtu_set_rts(modbus_t *ctx, int mode)
         modbus_rtu_t *ctx_rtu = ctx->backend_data;
 
         if (mode == MODBUS_RTU_RTS_NONE || mode == MODBUS_RTU_RTS_UP ||
-            mode == MODBUS_RTU_RTS_DOWN) {
+            mode == MODBUS_RTU_RTS_DOWN || mode == MODBUS_RTU_RTS_HW) {
             ctx_rtu->rts = mode;
 
             /* Set the RTS bit in order to not reserve the RS485 bus */
-            _modbus_rtu_ioctl_rts(ctx->s, ctx_rtu->rts != MODBUS_RTU_RTS_UP);
+            if (mode != MODBUS_RTU_RTS_NONE && mode != MODBUS_RTU_RTS_HW) {
+                _modbus_rtu_ioctl_rts(ctx->s, ctx_rtu->rts != MODBUS_RTU_RTS_UP);
+			}
 
             return 0;
         }
@@ -894,6 +901,15 @@ int modbus_rtu_set_rts(modbus_t *ctx, int mode)
     /* Wrong backend or invalid mode specified */
     errno = EINVAL;
     return -1;
+}
+
+int modbus_rtu_set_time_rts_switch(int usec) {
+    modbus_rts_time_rts_switch = usec;
+    return 0;
+}
+
+int modbus_rtu_get_time_rts_switch() {
+    return modbus_rts_time_rts_switch;
 }
 
 int modbus_rtu_get_rts(modbus_t *ctx) {

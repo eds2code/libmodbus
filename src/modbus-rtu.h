@@ -40,9 +40,13 @@ int modbus_rtu_get_serial_mode(modbus_t *ctx);
 #define MODBUS_RTU_RTS_NONE   0
 #define MODBUS_RTU_RTS_UP     1
 #define MODBUS_RTU_RTS_DOWN   2
+#define MODBUS_RTU_RTS_HW     3
 
 int modbus_rtu_set_rts(modbus_t *ctx, int mode);
 int modbus_rtu_get_rts(modbus_t *ctx);
+
+int modbus_rtu_set_time_rts_switch (int usec);
+int modbus_rtu_set_time_rts_switch ();
 
 MODBUS_END_DECLS
 
