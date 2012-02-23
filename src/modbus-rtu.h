@@ -45,8 +45,8 @@ int modbus_rtu_get_serial_mode(modbus_t *ctx);
 int modbus_rtu_set_rts(modbus_t *ctx, int mode);
 int modbus_rtu_get_rts(modbus_t *ctx);
 
-int modbus_rtu_set_time_rts_switch (int usec);
-int modbus_rtu_set_time_rts_switch ();
+int modbus_rtu_set_time_rts_switch(modbus_t *ctx, int usec);
+int modbus_rtu_get_time_rts_switch(modbus_t *ctx);
 
 MODBUS_END_DECLS
 

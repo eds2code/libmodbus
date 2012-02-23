@@ -292,11 +292,11 @@ ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
         }
 
         _modbus_rtu_ioctl_rts(ctx->s, ctx_rtu->rts == MODBUS_RTU_RTS_UP);
-        usleep(modbus_rts_time_rts_switch);
+        usleep(ctx_rtu->rts_time_switch);
 
         size = write(ctx->s, req, req_length);
 
-        usleep(modbus_rts_time_rts_switch);
+        usleep(ctx_rtu->rts_time_switch);
         _modbus_rtu_ioctl_rts(ctx->s, ctx_rtu->rts != MODBUS_RTU_RTS_UP);
 
         return size;
@@ -662,9 +662,9 @@ static int _modbus_rtu_connect(modbus_t *ctx)
     }
     
     /* Check for RTS hardware handling */
-    if (modbus_rtu_get_rts (ctx) == MODBUS_RTU_RTS_HW) {
-		tios.c_cflag |= CRTSCTS;
-	}
+    if (modbus_rtu_get_rts(ctx) == MODBUS_RTU_RTS_HW) {
+        tios.c_cflag |= CRTSCTS;
+    }
 
     /* Stop bit (1 or 2) */
     if (ctx_rtu->stop_bit == 1)
@@ -903,20 +903,48 @@ int modbus_rtu_set_rts(modbus_t *ctx, int mode)
     return -1;
 }
 
-int modbus_rtu_set_time_rts_switch(int usec) {
-    modbus_rts_time_rts_switch = usec;
-    return 0;
-}
-
-int modbus_rtu_get_time_rts_switch() {
-    return modbus_rts_time_rts_switch;
-}
-
 int modbus_rtu_get_rts(modbus_t *ctx) {
     if (ctx->backend->backend_type == _MODBUS_BACKEND_TYPE_RTU) {
 #if HAVE_DECL_TIOCM_RTS
         modbus_rtu_t *ctx_rtu = ctx->backend_data;
         return ctx_rtu->rts;
+#else
+        if (ctx->debug) {
+            fprintf(stderr, "This function isn't supported on your platform\n");
+        }
+        errno = ENOTSUP;
+        return -1;
+#endif
+    } else {
+        errno = EINVAL;
+        return -1;
+    }
+}
+
+int modbus_rtu_set_time_rts_switch(modbus_t *ctx, int usec) {
+    if (ctx->backend->backend_type == _MODBUS_BACKEND_TYPE_RTU) {
+#if HAVE_DECL_TIOCM_RTS
+        modbus_rtu_t *ctx_rtu = ctx->backend_data;
+        ctx_rtu->rts_time_switch = usec;
+        return 0;
+#else
+        if (ctx->debug) {
+            fprintf(stderr, "This function isn't supported on your platform\n");
+        }
+        errno = ENOTSUP;
+        return -1;
+#endif
+    } else {
+        errno = EINVAL;
+        return -1;
+    }
+}
+
+int modbus_rtu_get_time_rts_switch(modbus_t *ctx) {
+    if (ctx->backend->backend_type == _MODBUS_BACKEND_TYPE_RTU) {
+#if HAVE_DECL_TIOCM_RTS
+        modbus_rtu_t *ctx_rtu = ctx->backend_data;
+        return ctx_rtu->rts_time_switch;
 #else
         if (ctx->debug) {
             fprintf(stderr, "This function isn't supported on your platform\n");
@@ -1066,12 +1094,15 @@ modbus_t* modbus_new_rtu(const char *device,
 
 #if HAVE_DECL_TIOCSRS485
     /* The RS232 mode has been set by default */
-    ctx_rtu->serial_mode = MODBUS_RTU_RS232;
+    ctx_rtu->serial_mode = MODBUS_RTU_RS232;    
 #endif
 
 #if HAVE_DECL_TIOCM_RTS
     /* The RTS use has been set by default */
     ctx_rtu->rts = MODBUS_RTU_RTS_NONE;
+    
+    /* Set default time wait before change the RTS bit */
+    ctx_rtu->rts_time_switch = _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH_DEFAULT;
 #endif
 
     ctx_rtu->confirmation_to_ignore = FALSE;

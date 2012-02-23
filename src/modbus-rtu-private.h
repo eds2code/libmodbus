@@ -40,7 +40,6 @@
 /* Default time waited beetween the RTS switch before transmit data or after transmit
    data before to read */
 #define _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH_DEFAULT 10000
-int modbus_rts_time_rts_switch = _MODBUS_RTU_TIME_BETWEEN_RTS_SWITCH_DEFAULT;
 
 #if defined(_WIN32)
 #define ENOTSUP WSAEOPNOTSUPP
@@ -88,9 +87,11 @@ typedef struct _modbus_rtu {
 #endif
 #if HAVE_DECL_TIOCM_RTS
     int rts;
+    int rts_time_switch;
 #endif
     /* To handle many slaves on the same link */
     int confirmation_to_ignore;
 } modbus_rtu_t;
 
 #endif /* _MODBUS_RTU_PRIVATE_H_ */
+	
