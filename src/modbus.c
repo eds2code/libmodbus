@@ -1610,3 +1610,17 @@ size_t strlcpy(char *dest, const char *src, size_t dest_size)
     return (s - src - 1); /* count does not include NUL */
 }
 #endif
+
+/*
+ * Function to read the global variable errno and return to external application like Mono with PInvoke
+ */
+int last_error_get() {
+	return errno;
+}
+
+/*
+ * Function to set the global variable errno at its default value
+ */
+void last_error_set(int err) {
+	errno=err;
+}
