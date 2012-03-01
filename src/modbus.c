@@ -1612,15 +1612,11 @@ size_t strlcpy(char *dest, const char *src, size_t dest_size)
 #endif
 
 /*
- * Function to read the global variable errno and return to external application like Mono with PInvoke
+ * Function that allow to specifty the timeout as a simple integer value
+ * This is necessary from C# code bacuse not able to pass a timeval struct
  */
-int last_error_get() {
-	return errno;
-}
-
-/*
- * Function to set the global variable errno at its default value
- */
-void last_error_set(int err) {
-	errno=err;
+void modbus_set_response_timeout_usec(modbus_t *ctx, int usec)
+{
+	ctx->response_timeout.tv_sec = 0;
+	ctx->response_timeout.tv_usec = usec;
 }
